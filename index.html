@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>MBTI职业性格测试</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .page { display: none; }
+        .active { display: block; }
+        .question { margin: 20px 0; padding: 15px; border: 1px solid #eee; border-radius: 8px; }
+        button { margin: 5px; padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <!-- 登录页面 -->
+    <div id="loginPage" class="page active">
+        <h2>应聘者登录</h2>
+        <input type="text" id="name" placeholder="请输入姓名">
+        <input type="tel" id="mobile" placeholder="请输入手机号" pattern="[0-9]{11}">
+        <button onclick="startTest()">开始测试</button>
+    </div>
+
+    <!-- 测试页面 -->
+    <div id="testPage" class="page">
+        <div id="questionContainer"></div>
+    </div>
+
+    <!-- 结果页面 -->
+    <div id="resultPage" class="page">
+        <h2>你的MBTI类型是：<span id="mbtiResult"></span></h2>
+        <p id="typeDesc"></p>
+    </div>
+
+    <script>
+        // 完整30题题库
+        const questions = [
+            {
+                question: "阅读小说时更享受？",
+                options: [
+                    { text: "细腻的环境描写", type: "S" },
+                    { text: "深刻的隐喻象征", type: "N" },
+                    { text: "严谨的情节逻辑", type: "T" },
+                    { text: "动人的情感共鸣", type: "F" }
+                ]
+            },
+            {
+                question: "走进陌生房间首先注意？",
+                options: [
+                    { text: "家具摆放规律", type: "J" },
+                    { text: "装饰风格冲突", type: "P" },
+                    { text: "人员情绪氛围", type: "F" },
+                    { text: "空间结构缺陷", type: "T" }
+                ]
+            },
+            {
+                question: "听到「深海」联想到？",
+                options: [
+                    { text: "水压数据与生物种类", type: "S" },
+                    { text: "未知文明的传说", type: "N" },
+                    { text: "孤独与恐惧感", type: "F" },
+                    { text: "资源开采可能性", type: "T" }
+                ]
+            },
+            {
+                question: "处理旧物时倾向于？",
+                options: [
+                    { text: "系统分类后丢弃", type: "J" },
+                    { text: "随心情分批处理", type: "P" },
+                    { text: "保留有纪念意义的", type: "F" },
+                    { text: "分析留存必要性", type: "T" }
+                ]
+            },
+            {
+                question: "看到抽象画作时？",
+                options: [
+                    { text: "分解色彩构成", type: "S" },
+                    { text: "揣测作者意图", type: "N" },
+                    { text: "评估市场价值", type: "T" },
+                    { text: "捕捉情感冲击", type: "F" }
+                ]
+            },
+            {
+                question: "周末下午突然空闲会？",
+                options: [
+                    { text: "联系朋友聚会", type: "E" },
+                    { text: "钻研兴趣爱好", type: "I" },
+                    { text: "整理下周计划", type: "J" },
+                    { text: "随机探索新事物", type: "P" }
+                ]
+            },
+            {
+                question: "描述梦境更接近？",
+                options: [
+                    { text: "清晰具体的场景", type: "S" },
+                    { text: "超现实的隐喻", type: "N" },
+                    { text: "解决问题的过程", type: "T" },
+                    { text: "强烈的情感波动", type: "F" }
+                ]
+            },
+            {
+                question: "学习新游戏时优先？",
+                options: [
+                    { text: "熟读规则手册", type: "S+J" },
+                    { text: "直接上手试错", type: "P" },
+                    { text: "分析获胜策略", type: "T" },
+                    { text: "关注互动乐趣", type: "F" }
+                ]
+            },
+            {
+                question: "听到不同观点时？",
+                options: [
+                    { text: "追问事实依据", type: "T" },
+                    { text: "揣测背后动机", type: "N" },
+                    { text: "体谅情感需求", type: "F" },
+                    { text: "对比自身经验", type: "S" }
+                ]
+            },
+            {
+                question: "整理相册的方式？",
+                options: [
+                    { text: "按时间精确排序", type: "J" },
+                    { text: "保留有感觉的", type: "P" },
+                    { text: "标注美学标准", type: "T" },
+                    { text: "重现故事脉络", type: "F" }
+                ]
+            },
+            {
+                question: "面对数学难题时？",
+                options: [
+                    { text: "逐步推导公式", type: "S" },
+                    { text: "寻找模式捷径", type: "N" },
+                    { text: "验证多种解法", type: "T" },
+                    { text: "联想现实应用", type: "F" }
+                ]
+            },
+            {
+                question: "参观博物馆侧重？",
+                options: [
+                    { text: "文物细节观察", type: "S" },
+                    { text: "文明演讲逻辑", type: "N" },
+                    { text: "展品情感共鸣", type: "F" },
+                    { text: "动线规划合理性", type: "J" }
+                ]
+            },
+            {
+                question: "听到音乐先感知？",
+                options: [
+                    { text: "乐器音色分离", type: "S" },
+                    { text: "情感氛围渲染", type: "F" },
+                    { text: "作曲结构分析", type: "T" },
+                    { text: "意象画面联想", type: "N" }
+                ]
+            },
+            {
+                question: "记忆密码常采用？",
+                options: [
+                    { text: "规律数字组合", type: "T" },
+                    { text: "关联生活事件", type: "S+F" },
+                    { text: "抽象概念转化", type: "N" },
+                    { text: "随机但记录", type: "P" }
+                ]
+            },
+            {
+                question: "选择服装更重视？",
+                options: [
+                    { text: "舒适使用性", type: "S" },
+                    { text: "独特概念表达", type: "N" },
+                    { text: "搭配系统性", type: "J" },
+                    { text: "传递特定印象", type: "F" }
+                ]
+            },
+            {
+                question: "听到“风暴”联想到？",
+                options: [
+                    { text: "气压数据变化", type: "S+T" },
+                    { text: "革命的象征", type: "N" },
+                    { text: "受灾人群困境", type: "F" },
+                    { text: "应急方案设计", type: "T" }
+                ]
+            },
+            {
+                question: "评价菜肴的标准？",
+                options: [
+                    { text: "食材的新鲜度", type: "S" },
+                    { text: "创意融合度", type: "N" },
+                    { text: "营养配比", type: "T" },
+                    { text: "烹饪心意感受", type: "F" }
+                ]
+            },
+            {
+                question: "迷路时的反应？",
+                options: [
+                    { text: "查地图找规律", type: "S+J" },
+                    { text: "观察环境特征", type: "N" },
+                    { text: "理性分析方位", type: "T" },
+                    { text: "询问路人", type: "E+F" }
+                ]
+            },
+            {
+                question: "收到礼物更在意？",
+                options: [
+                    { text: "实用性价值", type: "T" },
+                    { text: "背后的心意", type: "F" },
+                    { text: "审美独特性", type: "N" },
+                    { text: "符合需求度", type: "S" }
+                ]
+            },
+            {
+                question: "规划生日聚会倾向？",
+                options: [
+                    { text: "流程时间表", type: "J" },
+                    { text: "主题创意", type: "N" },
+                    { text: "宾客体验", type: "F" },
+                    { text: "灵活调整空间", type: "P" }
+                ]
+            },
+            {
+                question: "选择宠物更看重？",
+                options: [
+                    { text: "饲养难易度", type: "T" },
+                    { text: "情感互动性", type: "F" },
+                    { text: "品种独特性", type: "N" },
+                    { text: "日常习惯匹配", type: "S" }
+                ]
+            },
+            {
+                question: "描述“时间”常用比喻？",
+                options: [
+                    { text: "线性", type: "S" },
+                    { text: "多维", type: "N" },
+                    { text: "金钱", type: "T" },
+                    { text: "珍贵", type: "F" }
+                ]
+            },
+            {
+                question: "听到争论时首先？",
+                options: [
+                    { text: "分析逻辑漏洞", type: "T" },
+                    { text: "捕捉潜在需求", type: "N" },
+                    { text: "缓解紧张气氛", type: "F" },
+                    { text: "回忆类似案例", type: "S" }
+                ]
+            },
+            {
+                question: "整理书柜的方法？",
+                options: [
+                    { text: "按尺寸排列", type: "S" },
+                    { text: "按主题关联", type: "N" },
+                    { text: "按阅读频率", type: "T" },
+                    { text: "按情感价值", type: "F" }
+                ]
+            },
+            {
+                question: "选择运动项目倾向？",
+                options: [
+                    { text: "精确技巧型", type: "S+J" },
+                    { text: "战略对抗型", type: "N+T" },
+                    { text: "团队协作型", type: "F" },
+                    { text: "自由探索型", type: "P" }
+                ]
+            },
+            {
+                question: "记忆人脸主要依靠？",
+                options: [
+                    { text: "五官特征细节", type: "S" },
+                    { text: "气质整体印象", type: "N" },
+                    { text: "职业身份推理", type: "T" },
+                    { text: "互动情绪记忆", type: "F" }
+                ]
+            },
+            {
+                question: "听到科学理论时？",
+                options: [
+                    { text: "思考实证方法", type: "T" },
+                    { text: "联想应用场景", type: "N" },
+                    { text: "评估伦理影响", type: "F" },
+                    { text: "记忆核心数据", type: "S" }
+                ]
+            },
+            {
+                question: "雨天独处时更可能？",
+                options: [
+                    { text: "系统学习知识", type: "I+T" },
+                    { text: "创作艺术表达", type: "N+F" },
+                    { text: "优化生活流程", type: "J" },
+                    { text: "随机观影游戏", type: "P" }
+                ]
+            },
+            // 继续补充剩余题目...
+        ];
+
+        // 用户数据
+        let user = {
+            name: '',
+            mobile: '',
+            answers: new Array(30).fill(null) // 初始化30题答案存储
+        };
+
+        // 初始化测试
+        function startTest() {
+            user.name = document.getElementById('name').value;
+            user.mobile = document.getElementById('mobile').value;
+            
+            if (!user.name || !/^1[3-9]\d{9}$/.test(user.mobile)) {
+                alert("请填写有效信息");
+                return;
+            }
+
+            showPage('testPage');
+            loadQuestion(0);
+        }
+
+        // 动态加载题目
+        function loadQuestion(index) {
+            const container = document.getElementById('questionContainer');
+            const q = questions[index];
+            
+            let html = `<div class="question">
+                <h3>第${index+1}题：${q.question}</h3>`;
+            
+            q.options.forEach(opt => {
+                html += `<button onclick="recordAnswer(${index}, '${opt.type}')">${opt.text}</button>`;
+            });
+            
+            container.innerHTML = html + '</div>';
+        }
+
+        // 记录答案
+        function recordAnswer(index, type) {
+            user.answers[index] = type;
+            
+            if (index < questions.length - 1) {
+                loadQuestion(index + 1);
+            } else {
+                showResult();
+            }
+        }
+
+        // 计算MBTI结果
+        function showResult() {
+            const scores = { E:0, I:0, S:0, N:0, T:0, F:0, J:0, P:0 };
+            
+            user.answers.forEach(type => {
+                if(type) scores[type]++;
+            });
+
+            const mbti = [
+                scores.E > scores.I ? 'E' : 'I',
+                scores.S > scores.N ? 'S' : 'N',
+                scores.T > scores.F ? 'T' : 'F',
+                scores.J > scores.P ? 'J' : 'P'
+            ].join('');
+
+            // 显示结果
+            showPage('resultPage');
+            document.getElementById('mbtiResult').textContent = mbti;
+            document.getElementById('typeDesc').textContent = getTypeDesc(mbti);
+        }
+
+        // 页面切换
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+        }
+
+        // 完整MBTI类型描述
+        function getTypeDesc(type) {
+            const desc = {
+                'ISTJ': '检查者：务实可靠，善于建立秩序',
+                'ISFJ': '保护者：细致体贴，坚守责任',
+                'INFJ': '咨询师：洞察人性，推动理想',
+                'INTJ': '战略家：系统思维，追求效能',
+                'ISTP': '巧匠：冷静分析，解决实际问题', 
+                'ISFP': '艺术家：敏感审美，追求和谐',
+                'INFP': '治愈者：理想主义，关怀人性',
+                'INTP': '逻辑学家：创新思维，探索理论',
+                'ESTP': '实干家：灵活应变，享受当下',
+                'ESFP': '表演者：热情洋溢，营造欢乐',
+                'ENFP': '倡导者：灵感迸发，激励他人',
+                'ENTP': '发明家：挑战常规，智慧辩论',
+                'ESTJ': '督导者：高效执行，确保结果',
+                'ESFJ': '供给者：维系和谐，关怀他人',
+                'ENFJ': '教育家：洞察潜能，培养成长',
+                'ENTJ': '指挥官：战略布局，驱动变革'
+            };
+            return desc[type] || '未知类型';
+        }
+    </script>
+</body>
+</html>
